@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: Deskly API
+  version: 1.0.0
+  description: Book a desk in the office for a given day.
+servers:
+  - url: https://deskly.example.com
+    description: Production
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Service health
+      tags: [Health]
+      responses:
+        "200":
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+  /desks:
+    get:
+      operationId: listDesks
+      summary: List desks
+      tags: [Desks]
+      parameters:
+        - name: zone
+          in: query
+          description: Filter desks by office zone.
+          required: false
+          schema:
+            type: string
+            enum: [north, south, quiet]
+      responses:
+        "200":
+          description: Every desk matching the filter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer, example: 6 }
+                  desks:
+                    type: array
+                    items: { $ref: "#/components/schemas/Desk" }
+  /desks/{deskId}:
+    get:
+      operationId: getDesk
+      summary: Get a desk
+      tags: [Desks]
+      parameters:
+        - name: deskId
+          in: path
+          required: true
+          schema: { type: string, example: desk-1 }
+      responses:
+        "200":
+          description: The requested desk.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Desk" }
+        "404":
+          description: No desk with that id.
+  /bookings:
+    get:
+      operationId: listBookings
+      summary: List bookings
+      tags: [Bookings]
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: deskId
+          in: query
+          required: false
+          schema: { type: string }
+      responses:
+        "200":
+          description: Bookings matching the filter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  bookings:
+                    type: array
+                    items: { $ref: "#/components/schemas/Booking" }
+    post:
+      operationId: createBooking
+      summary: Book a desk
+      tags: [Bookings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/BookingRequest" }
+      responses:
+        "201":
+          description: The desk is reserved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Booking" }
+        "409":
+          description: That desk is already booked for that date.
+  /bookings/{bookingId}:
+    get:
+      operationId: getBooking
+      summary: Get a booking
+      tags: [Bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema: { type: string, example: bkg_seed01 }
+      responses:
+        "200":
+          description: The requested booking.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Booking" }
+        "404":
+          description: No booking with that id.
+    delete:
+      operationId: cancelBooking
+      summary: Cancel a booking
+      tags: [Bookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: The booking was cancelled.
+        "404":
+          description: No booking with that id.
+components:
+  schemas:
+    Desk:
+      type: object
+      properties:
+        id: { type: string, example: desk-1 }
+        label: { type: string, example: North 01 }
+        zone: { type: string, example: north }
+        monitor: { type: boolean }
+        standing: { type: boolean }
+    BookingRequest:
+      type: object
+      required: [deskId, date, bookedBy]
+      properties:
+        deskId: { type: string, example: desk-3 }
+        date: { type: string, format: date, example: "2026-10-01" }
+        bookedBy: { type: string, format: email, example: priya@example.com }
+    Booking:
+      allOf:
+        - $ref: "#/components/schemas/BookingRequest"
+        - type: object
+          properties:
+            id: { type: string, example: bkg_seed01 }
+            createdAt: { type: string, format: date-time }
