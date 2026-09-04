@@ -1,0 +1,7 @@
+# fern/docs.yml
+instances:
+  - url: anthony-viard-liftoff.docs.buildwithfern.com
+title: Deskly | Documentation
+navigation:
+  - api: API Reference
+    api-name: api
